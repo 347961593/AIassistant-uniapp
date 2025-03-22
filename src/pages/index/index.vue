@@ -1,48 +1,265 @@
 <template>
-  <view class="content">
-    <image class="logo" src="/static/logo.png"></image>
-    <view class="text-area">
-      <text class="title">{{ title }}</text>
+  <view class="container" :class="{ 'overflow-hidden': historyListShow }" @touchstart="handleTouchStart" @touchend="handleTouchEnd">
+
+    <!-- 顶部导航栏 -->
+    <view class="nav-bar"></view>
+
+    <!-- 历史记录按钮 -->
+    <view class="history-trigger" @click="toggleHistory">
+      <text class="trigger-icon">›</text>
+    </view>
+    <!-- 历史记录组件 -->
+    <HistoryList
+      :show="historyListShow"
+      @close="toggleHistory"
+      @select="handleHistorySelect"
+    ></HistoryList>
+
+    <Home v-if="homeShow"></Home>
+    <Chat v-else></Chat>
+
+    <!-- 底部输入框 -->
+    <view class="input-area">
+      <view class="model-selector" @click="toggleSelector">
+        <view class="selected-model">
+          <text>{{ currentModelLabel }}</text>
+          <text class="arrow" :class="{ 'arrow-up': showSelector }">▼</text>
+        </view>
+        <view class="model-options" v-if="showSelector">
+          <view
+            v-for="(model, index) in modelOptions"
+            :key="index"
+            :class="['model-option', { active: currentModel === model.value }]"
+            @click.stop="selectModel(model.value)"
+          >
+            {{ model.label }}
+          </view>
+        </view>
+      </view>
+      <view class="input-box">
+        <input
+          type="text"
+          placeholder="有什么问题都可以问我"
+          placeholder-class="input-placeholder"
+          v-model="inputContent"
+        />
+        <view class="voice-icon">🎤</view>
+      </view>
     </view>
   </view>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      title: 'Hello',
-    }
-  },
-  onLoad() {},
-  methods: {},
+<script setup>
+import Home from "@comp/home.vue";
+import Chat from "@comp/chat.vue";
+import HistoryList from "@comp/historyList.vue";
+import { ref, computed, onMounted } from "vue";
+
+// 响应式状态
+const inputContent = ref("");
+const showSelector = ref(false);
+const currentModel = ref("deepseek");
+
+// 常量数据
+const homeShow = true;
+
+const modelOptions = [
+  { label: "DeepSeek-V3", value: "deepseek" },
+  { label: "知识库", value: "knowledge" },
+  { label: "GPT-4", value: "gpt4" },
+  { label: "Claude", value: "claude" },
+];
+
+// 计算属性
+const currentModelLabel = computed(() => {
+  const model = modelOptions.find((m) => m.value === currentModel.value);
+  return model ? model.label : "";
+});
+
+// 方法
+const toggleSelector = () => {
+  showSelector.value = !showSelector.value;
+};
+
+const selectModel = (model) => {
+  currentModel.value = model;
+  showSelector.value = false;
+};
+
+// 添加历史记录显示状态
+const historyListShow = ref(false)
+
+// 切换历史记录显示
+const toggleHistory = () => {
+  historyListShow.value = !historyListShow.value
 }
+
+// 处理历史记录选择
+const handleHistorySelect = (item) => {
+  console.log('选中的历史记录：', item)
+  historyListShow.value = false
+  // 这里可以添加处理选中历史记录的逻辑
+}
+
+// 添加触摸相关的变量
+const touchStartX = ref(0)
+const touchEndX = ref(0)
+
+// 处理触摸开始
+const handleTouchStart = (e) => {
+  touchStartX.value = e.touches[0].clientX
+}
+
+// 处理触摸结束
+const handleTouchEnd = (e) => {
+  touchEndX.value = e.changedTouches[0].clientX
+  const swipeDistance = touchEndX.value - touchStartX.value
+  
+  // 如果右滑距离超过50，显示历史记录
+  if (swipeDistance > 50) {
+    historyListShow.value = true
+  }
+}
+
+// 生命周期钩子
+onMounted(() => {
+  console.log(uni);
+
+  // 点击其他区域关闭选择器
+  uni.onTouchStart(() => {
+    if (showSelector.value) {
+      showSelector.value = false;
+    }
+  });
+});
 </script>
 
-<style>
-.content {
+<style lang="scss" scoped>
+.container {
+  min-height: 100vh;
+  background: linear-gradient(to bottom, #e6e9ff, #f3e6ff);
+  padding: 20rpx;
+  
+  &.overflow-hidden {
+    overflow: hidden;
+    height: 100vh;
+  }
+}
+
+.history-trigger {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40rpx;
+  height: 100rpx;
+  background: rgba(139,127,209,0.1);
+  border-radius: 0 20rpx 20rpx 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
+  z-index: 99;
+  
+  .trigger-icon {
+    color: #8b7fd1;
+    font-size: 32rpx;
+    font-weight: bold;
+  }
 }
 
-.logo {
-  height: 200rpx;
-  width: 200rpx;
-  margin-top: 200rpx;
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: 50rpx;
-}
-
-.text-area {
+.nav-bar {
+  padding: 20rpx 0;
   display: flex;
-  justify-content: center;
+  align-items: center;
 }
 
-.title {
-  font-size: 36rpx;
-  color: #8f8f94;
+.input-area {
+  position: fixed;
+  bottom: 40rpx;
+  left: 20rpx;
+  right: 20rpx;
+
+  .model-selector {
+    position: relative;
+    margin-bottom: 20rpx;
+
+    .selected-model {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 12rpx 30rpx;
+      border-radius: 30rpx;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10rpx;
+      font-size: 24rpx;
+      color: #8b7fd1;
+      box-shadow: 0 2rpx 8rpx rgba(139, 127, 209, 0.1);
+
+      .arrow {
+        font-size: 20rpx;
+        transition: transform 0.3s ease;
+
+        &.arrow-up {
+          transform: rotate(180deg);
+        }
+      }
+    }
+
+    .model-options {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: 16rpx;
+      padding: 10rpx;
+      margin-bottom: 10rpx;
+      box-shadow: 0 4rpx 16rpx rgba(139, 127, 209, 0.15);
+      max-height: 400rpx;
+      overflow-y: auto;
+
+      .model-option {
+        padding: 16rpx 30rpx;
+        font-size: 24rpx;
+        color: #666;
+        border-radius: 8rpx;
+        transition: all 0.2s ease;
+
+        &.active {
+          background: rgba(139, 127, 209, 0.1);
+          color: #8b7fd1;
+          font-weight: 500;
+        }
+
+        &:active {
+          background: rgba(139, 127, 209, 0.15);
+        }
+      }
+    }
+  }
+
+  .input-box {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 40rpx;
+    padding: 20rpx 30rpx;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2rpx 8rpx rgba(139, 127, 209, 0.1);
+
+    input {
+      flex: 1;
+      font-size: 28rpx;
+    }
+
+    .voice-icon {
+      margin-left: 20rpx;
+      font-size: 40rpx;
+    }
+  }
+}
+
+.input-placeholder {
+  color: #999;
+  font-size: 28rpx;
 }
 </style>

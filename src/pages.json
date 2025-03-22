@@ -3,14 +3,17 @@
 		{
 			"path": "pages/index/index",
 			"style": {
-				"navigationBarTitleText": "uni-app"
+				"navigationBarTitleText": "AI智能助手",
+				"navigationBarBackgroundColor": "#E6E9FF",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#E6E9FF"
 			}
 		}
 	],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
-		"navigationBarTitleText": "uni-app",
-		"navigationBarBackgroundColor": "#F8F8F8",
-		"backgroundColor": "#F8F8F8"
+		"navigationBarTitleText": "AI智能助手",
+		"navigationBarBackgroundColor": "#E6E9FF",
+		"backgroundColor": "#E6E9FF"
 	}
 }
