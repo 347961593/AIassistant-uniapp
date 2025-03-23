@@ -1,6 +1,10 @@
 <template>
-  <view class="container" :class="{ 'overflow-hidden': historyListShow }" @touchstart="handleTouchStart" @touchend="handleTouchEnd">
-
+  <view
+    class="container"
+    :class="{ 'overflow-hidden': historyListShow }"
+    @touchstart="handleTouchStart"
+    @touchend="handleTouchEnd"
+  >
     <!-- 顶部导航栏 -->
     <view class="nav-bar"></view>
 
@@ -16,7 +20,13 @@
     ></HistoryList>
 
     <Home v-if="homeShow"></Home>
-    <Chat v-else></Chat>
+    <Chat
+      v-else
+      ref="chatComp"
+      :inputContent="inputContent"
+      :botId="currentModel"
+      @sendSuccess="inputContent = ''"
+    ></Chat>
 
     <!-- 底部输入框 -->
     <view class="input-area">
@@ -42,37 +52,49 @@
           placeholder="有什么问题都可以问我"
           placeholder-class="input-placeholder"
           v-model="inputContent"
+          @confirm="sendMessage"
         />
-        <view class="voice-icon">🎤</view>
+        <!-- <uni-icons type="mic" size="30"></uni-icons> -->
       </view>
     </view>
   </view>
 </template>
 
 <script setup>
+import { ref, computed, onMounted, nextTick } from "vue";
 import Home from "@comp/home.vue";
 import Chat from "@comp/chat.vue";
 import HistoryList from "@comp/historyList.vue";
-import { ref, computed, onMounted } from "vue";
+import { http } from "@/utils/request";
 
 // 响应式状态
 const inputContent = ref("");
 const showSelector = ref(false);
-const currentModel = ref("deepseek");
-
+const currentModel = ref("");
+const modelOptions = ref([]);
+const chatComp = ref(null);
+const homeShow = ref(true);
 // 常量数据
-const homeShow = true;
+// let homeShow = true;
 
-const modelOptions = [
-  { label: "DeepSeek-V3", value: "deepseek" },
-  { label: "知识库", value: "knowledge" },
-  { label: "GPT-4", value: "gpt4" },
-  { label: "Claude", value: "claude" },
-];
+// 查看智能体列表
+async function getBotsList() {
+  const { code, data } = await http.get("coze/v1/space/published_bots_list", {
+    space_id: "7478630827123933236",
+  });
+  if (code == 0) {
+    modelOptions.value = data.space_bots.map((item) => ({
+      label: item.bot_name,
+      value: item.bot_id,
+    }));
+    currentModel.value = data.space_bots[0].bot_id;
+  }
+}
+getBotsList();
 
 // 计算属性
 const currentModelLabel = computed(() => {
-  const model = modelOptions.find((m) => m.value === currentModel.value);
+  const model = modelOptions.value.find((m) => m.value === currentModel.value);
   return model ? model.label : "";
 });
 
@@ -85,52 +107,66 @@ const selectModel = (model) => {
   currentModel.value = model;
   showSelector.value = false;
 };
+function sendMessage() {
+  if (!inputContent.value.trim()) {
+    uni.showToast({
+      title: "请输入内容",
+      icon: "none",
+    });
+    return;
+  }
+
+  // 调用组件新建会话方法
+  homeShow.value = false;
+  
+  nextTick(() => {
+    chatComp.value.createChat();
+  });
+}
 
 // 添加历史记录显示状态
-const historyListShow = ref(false)
+const historyListShow = ref(false);
 
 // 切换历史记录显示
 const toggleHistory = () => {
-  historyListShow.value = !historyListShow.value
-}
+  historyListShow.value = !historyListShow.value;
+};
 
 // 处理历史记录选择
 const handleHistorySelect = (item) => {
-  console.log('选中的历史记录：', item)
-  historyListShow.value = false
+  console.log("选中的历史记录：", item);
+  historyListShow.value = false;
   // 这里可以添加处理选中历史记录的逻辑
-}
+};
 
 // 添加触摸相关的变量
-const touchStartX = ref(0)
-const touchEndX = ref(0)
+const touchStartX = ref(0);
+const touchEndX = ref(0);
 
 // 处理触摸开始
 const handleTouchStart = (e) => {
-  touchStartX.value = e.touches[0].clientX
-}
+  touchStartX.value = e.touches[0].clientX;
+};
 
 // 处理触摸结束
 const handleTouchEnd = (e) => {
-  touchEndX.value = e.changedTouches[0].clientX
-  const swipeDistance = touchEndX.value - touchStartX.value
-  
+  touchEndX.value = e.changedTouches[0].clientX;
+  const swipeDistance = touchEndX.value - touchStartX.value;
+
   // 如果右滑距离超过50，显示历史记录
   if (swipeDistance > 50) {
-    historyListShow.value = true
+    historyListShow.value = true;
   }
-}
+};
 
 // 生命周期钩子
 onMounted(() => {
-  console.log(uni);
-
   // 点击其他区域关闭选择器
-  uni.onTouchStart(() => {
-    if (showSelector.value) {
-      showSelector.value = false;
-    }
-  });
+  // uni.onTouchStart(() => {
+  //   if (showSelector.value) {
+  //     showSelector.value = false;
+  //   }
+  // });
 });
 </script>
 
@@ -139,7 +175,7 @@ onMounted(() => {
   min-height: 100vh;
   background: linear-gradient(to bottom, #e6e9ff, #f3e6ff);
   padding: 20rpx;
-  
+
   &.overflow-hidden {
     overflow: hidden;
     height: 100vh;
@@ -153,13 +189,13 @@ onMounted(() => {
   transform: translateY(-50%);
   width: 40rpx;
   height: 100rpx;
-  background: rgba(139,127,209,0.1);
+  background: rgba(139, 127, 209, 0.1);
   border-radius: 0 20rpx 20rpx 0;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 99;
-  
+
   .trigger-icon {
     color: #8b7fd1;
     font-size: 32rpx;

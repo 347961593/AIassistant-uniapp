@@ -17,7 +17,7 @@
             <text class="item-time">{{ formatTime(item.time) }}</text>
           </view>
           <view class="delete-btn" @click="handleDelete(index)">
-            <text class="delete-icon">🗑</text>
+            <uni-icons type="trash" size="30"></uni-icons>
           </view>
         </view>
       </scroll-view>
@@ -182,11 +182,6 @@ const handleDelete = (index) => {
       justify-content: center;
       border-radius: 50%;
       background: rgba(139,127,209,0.1);
-      
-      .delete-icon {
-        font-size: 32rpx;
-        color: #8b7fd1;
-      }
     }
   }
 }

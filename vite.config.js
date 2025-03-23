@@ -23,15 +23,10 @@ export default defineConfig({
     host: "0.0.0.0",
     hmr: true,
     proxy: {
-      "/minimax":{
-        target: "https://api.minimax.chat",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/minimax/, ""),
-      },
-      "/cozechat": {
+      "/coze": {
         target: "https://api.coze.cn",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/cozechat/, ""),
+        rewrite: (path) => path.replace(/^\/coze/, ""),
       },
     },
   },

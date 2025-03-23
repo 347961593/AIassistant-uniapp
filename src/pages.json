@@ -15,5 +15,11 @@
 		"navigationBarTitleText": "AI智能助手",
 		"navigationBarBackgroundColor": "#E6E9FF",
 		"backgroundColor": "#E6E9FF"
+	},
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			"^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
+		}
 	}
 }
